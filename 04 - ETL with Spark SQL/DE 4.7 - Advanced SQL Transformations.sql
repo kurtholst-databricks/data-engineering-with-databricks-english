@@ -1,6 +1,6 @@
 -- Databricks notebook source
 -- MAGIC %md-sandbox
--- MAGIC 
+-- MAGIC
 -- MAGIC <div style="text-align: center; line-height: 0; padding-top: 9px;">
 -- MAGIC   <img src="https://databricks.com/wp-content/uploads/2018/03/db-academy-rgb-1200px.png" alt="Databricks Learning" style="width: 600px">
 -- MAGIC </div>
@@ -8,14 +8,14 @@
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="bc50b1e9-781a-405d-bed4-c80dbd97e0d1"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC # Advanced SQL Transformations
--- MAGIC 
+-- MAGIC
 -- MAGIC Querying tabular data stored in the data lakehouse with Spark SQL is easy, efficient, and fast.
--- MAGIC 
+-- MAGIC
 -- MAGIC This gets more complicated as the data structure becomes less regular, when many tables need to be used in a single query, or when the shape of data needs to be changed dramatically. This notebook introduces a number of functions present in Spark SQL to help engineers complete even the most complicated transformations.
--- MAGIC 
+-- MAGIC
 -- MAGIC ## Learning Objectives
 -- MAGIC By the end of this lesson, you should be able to:
 -- MAGIC - Use **`.`** and **`:`** syntax to query nested data
@@ -28,10 +28,10 @@
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="4c84edde-f73e-4873-aa45-aca0cf4c7159"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Run Setup
--- MAGIC 
+-- MAGIC
 -- MAGIC The setup script will create the data and declare necessary values for the rest of this notebook to execute.
 
 -- COMMAND ----------
@@ -40,13 +40,18 @@
 
 -- COMMAND ----------
 
+-- MAGIC %python
+-- MAGIC dbutils.fs.ls(DA.paths.working_dir)
+
+-- COMMAND ----------
+
 -- MAGIC %md <i18n value="836f7278-abe6-42e5-8e54-73410c439a55"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Interacting with JSON Data
--- MAGIC 
+-- MAGIC
 -- MAGIC The **`events_raw`** table was registered against data representing a Kafka payload.
--- MAGIC 
+-- MAGIC
 -- MAGIC In most cases, Kafka data will be binary-encoded JSON values. We'll cast the **`key`** and **`value`** as strings below to look at these in a human-readable format.
 
 -- COMMAND ----------
@@ -60,22 +65,22 @@ SELECT * FROM events_strings
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="c758863e-eb79-4b7b-b397-255b78699287"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Spark SQL has built-in functionality to directly interact with JSON data stored as strings. We can use the **`:`** syntax to traverse nested data structures.
 
 -- COMMAND ----------
 
-SELECT value:device, value:geo:city 
+SELECT value:device, value:geo:city, value:geo:state, value:traffic_source
 FROM events_strings
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="773a02a1-6208-4f7c-ad6a-e50850be0055"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Spark SQL also has the ability to parse JSON objects into struct types (a native Spark type with nested attributes).
--- MAGIC 
+-- MAGIC
 -- MAGIC However, the **`from_json`** function requires a schema. To derive the schema of our current data, we'll start by executing a query we know will return a JSON value with no null fields.
 
 -- COMMAND ----------
@@ -89,8 +94,8 @@ LIMIT 1
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="99cdb6bd-f03b-487d-a581-98ecf5fb86a3"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Spark SQL also has a **`schema_of_json`** function to derive the JSON schema from an example. Here, we copy and paste an example JSON to the function and chain it into the **`from_json`** function to cast our **`value`** field to a struct type.
 
 -- COMMAND ----------
@@ -104,8 +109,8 @@ SELECT * FROM parsed_events
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="72757378-3490-4160-af61-cc8e86986633"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Once a JSON string is unpacked to a struct type, Spark supports **`*`** (star) unpacking to flatten fields into columns.
 
 -- COMMAND ----------
@@ -119,12 +124,12 @@ SELECT * FROM new_events_final
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="71294bed-5a75-4577-8e34-d6cf319f7925"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Explore Data Structures
--- MAGIC 
+-- MAGIC
 -- MAGIC Spark SQL has robust syntax for working with complex and nested data types.
--- MAGIC 
+-- MAGIC
 -- MAGIC Start by looking at the fields in the **`events`** table.
 
 -- COMMAND ----------
@@ -134,10 +139,10 @@ DESCRIBE events
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="50bc40ad-f9fc-42f9-bb00-e1afecceff26"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC The **`ecommerce`** field is a struct that contains a double and 2 longs.
--- MAGIC 
+-- MAGIC
 -- MAGIC We can interact with the subfields in this field using standard **`.`** syntax similar to how we might traverse nested data in JSON.
 
 -- COMMAND ----------
@@ -149,14 +154,14 @@ WHERE ecommerce.purchase_revenue_in_usd IS NOT NULL
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="0c5d4757-46c8-4ddd-8ad0-b81bcfd6d178"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC ## Working with Arrays
 -- MAGIC The **`items`** field in the **`events`** table is an array of structs.
--- MAGIC 
+-- MAGIC
 -- MAGIC Spark SQL has a number of functions specifically to deal with arrays.
--- MAGIC 
+-- MAGIC
 -- MAGIC For example, the **`size`** function provides a count of the number of elements in an array for each row.
--- MAGIC 
+-- MAGIC
 -- MAGIC Let's use this to filter for event records with arrays containing 3 or more items.
 
 -- COMMAND ----------
@@ -168,12 +173,12 @@ WHERE size(items) > 2
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="0167fd9c-9374-4b86-90cf-53ae9feae297"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC ## Explode Arrays
--- MAGIC 
+-- MAGIC
 -- MAGIC The **`explode`** function lets us put each element in an array on its own row.
--- MAGIC 
+-- MAGIC
 -- MAGIC Let's use this to explode event records with 3 or more items into separate rows, one for each item in the array.
 
 -- COMMAND ----------
@@ -185,16 +190,16 @@ WHERE size(items) > 2
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="df218c13-c1e9-4644-8859-d1d66106f224"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC ## Collect Arrays
--- MAGIC 
+-- MAGIC
 -- MAGIC The **`collect_set`** function can collect unique values for a field, including fields within arrays.
--- MAGIC 
+-- MAGIC
 -- MAGIC The **`flatten`** function allows multiple arrays to be combined into a single array.
--- MAGIC 
+-- MAGIC
 -- MAGIC The **`array_distinct`** function removes duplicate elements from an array.
--- MAGIC 
+-- MAGIC
 -- MAGIC Here, we combine these queries to create a simple table that shows the unique collection of actions and the items in a user's cart.
 
 -- COMMAND ----------
@@ -208,12 +213,12 @@ GROUP BY user_id
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="211f8b57-6202-4fdb-a60c-50dab87f48ca"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC ## Join Tables
--- MAGIC 
+-- MAGIC
 -- MAGIC Spark SQL supports standard join operations (inner, outer, left, right, anti, cross, semi).
--- MAGIC 
+-- MAGIC
 -- MAGIC Here we chain a join with a lookup table to an **`explode`** operation to grab the standard printed item name.
 
 -- COMMAND ----------
@@ -231,13 +236,13 @@ SELECT * FROM sales_enriched
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="ee523edb-b563-41af-82e1-f9b28a076989"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Set Operators
 -- MAGIC Spark SQL supports **`UNION`**, **`MINUS`**, and **`INTERSECT`** set operators.
--- MAGIC 
+-- MAGIC
 -- MAGIC **`UNION`** returns the collection of two queries. 
--- MAGIC 
+-- MAGIC
 -- MAGIC The query below returns the same results as if we inserted our **`new_events_final`** into the **`events`** table.
 
 -- COMMAND ----------
@@ -249,8 +254,8 @@ SELECT * FROM new_events_final
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="99487e80-251a-4468-98e2-6f7d25b147ef"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC **`INTERSECT`** returns all rows found in both relations.
 
 -- COMMAND ----------
@@ -262,27 +267,27 @@ SELECT * FROM new_events_final
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="c00adc33-1831-407b-b787-8d3bfaddadf9"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC The above query returns no results because our two datasets have no values in common.
--- MAGIC 
+-- MAGIC
 -- MAGIC **`MINUS`** returns all the rows found in one dataset but not the other; we'll skip executing this here as our previous query demonstrates we have no values in common.
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="e43bb5f8-d2d6-440f-a8f5-15387bd5bff1"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
--- MAGIC 
+-- MAGIC
 -- MAGIC ## Pivot Tables
 -- MAGIC The **`PIVOT`** clause is used for data perspective. We can get the aggregated values based on specific column values, which will be turned to multiple columns used in **`SELECT`** clause. The **`PIVOT`** clause can be specified after the table name or subquery.
--- MAGIC 
+-- MAGIC
 -- MAGIC **`SELECT * FROM ()`**: The **`SELECT`** statement inside the parentheses is the input for this table.
--- MAGIC 
+-- MAGIC
 -- MAGIC **`PIVOT`**: The first argument in the clause is an aggregate function and the column to be aggregated. Then, we specify the pivot column in the **`FOR`** subclause. The **`IN`** operator contains the pivot column values. 
--- MAGIC 
+-- MAGIC
 -- MAGIC Here we use **`PIVOT`** to create a new **`transactions`** table that flattens out the information contained in the **`sales`** table.
--- MAGIC 
+-- MAGIC
 -- MAGIC This flattened data format can be useful for dashboarding, but also useful for applying machine learning algorithms for inference or prediction.
 
 -- COMMAND ----------
@@ -322,12 +327,12 @@ SELECT * FROM transactions
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="d1ed83fa-4d2f-4138-b343-4d070c0d0e40"/>
--- MAGIC 
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Higher Order Functions
 -- MAGIC Higher order functions in Spark SQL allow you to work directly with complex data types. When working with hierarchical data, records are frequently stored as array or map type objects. Higher-order functions allow you to transform data while preserving the original structure.
--- MAGIC 
+-- MAGIC
 -- MAGIC Higher order functions include:
 -- MAGIC - **`FILTER`** filters an array using the given lambda function.
 -- MAGIC - **`EXISTS`** tests whether a statement is true for one or more elements in an array. 
@@ -337,13 +342,13 @@ SELECT * FROM transactions
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="5fcad266-d5a0-4255-9c6b-be3634ea9e79"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Filter
 -- MAGIC Remove items that are not king-sized from all records in our **`items`** column. We can use the **`FILTER`** function to create a new column that excludes that value from each array.
--- MAGIC 
+-- MAGIC
 -- MAGIC **`FILTER (items, i -> i.item_id LIKE "%K") AS king_items`**
--- MAGIC 
+-- MAGIC
 -- MAGIC In the statement above:
 -- MAGIC - **`FILTER`** : the name of the higher-order function <br>
 -- MAGIC - **`items`** : the name of our input array <br>
@@ -363,10 +368,10 @@ FROM sales
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="7ef7b728-dfad-4cdf-8f41-8c72a76d4310"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC You may write a filter that produces a lot of empty arrays in the created column. When that happens, it can be useful to use a **`WHERE`** clause to show only non-empty array values in the returned column. 
--- MAGIC 
+-- MAGIC
 -- MAGIC In this example, we accomplish that by using a subquery (a query within a query). They are useful for performing an operation in multiple steps. In this case, we're using it to create the named column that we will use with a **`WHERE`** clause.
 
 -- COMMAND ----------
@@ -381,20 +386,20 @@ FROM (
   FROM sales)
 WHERE size(king_items) > 0;
   
-SELECT * FROM king_size_sales
+SELECT * FROM king_size_sales limit 10
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="e30bf997-6eb6-4ee7-94b8-6827ecdcce7d"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Transform
 -- MAGIC Built-in functions are designed to operate on a single, simple data type within a cell; they cannot process array values. **`TRANSFORM`** can be particularly useful when you want to apply an existing function to each element in an array. 
--- MAGIC 
+-- MAGIC
 -- MAGIC Compute the total revenue from king-sized items per order.
--- MAGIC 
+-- MAGIC
 -- MAGIC **`TRANSFORM(king_items, k -> CAST(k.item_revenue_in_usd * 100 AS INT)) AS item_revenues`**
--- MAGIC 
+-- MAGIC
 -- MAGIC In the statement above, for each value in the input array, we extract the item's revenue value, multiply it by 100, and cast the result to integer. Note that we're using the same kind as references as in the previous command, but we name the iterator with a new variable, **`k`**.
 
 -- COMMAND ----------
@@ -417,17 +422,17 @@ SELECT * FROM king_item_revenues
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="6c15bff7-7667-4118-9b72-27068d6fa6be"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Summary
 -- MAGIC Spark SQL offers a comprehensive set of native functionality for interacting with and manipulating highly nested data.
--- MAGIC 
+-- MAGIC
 -- MAGIC While some syntax for this functionality may be unfamiliar to SQL users, leveraging built-in functions like higher order functions can prevent SQL engineers from needing to rely on custom logic when dealing with highly complex data structures.
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="2f9ae39d-2908-4ee1-9609-594c3d043a38"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC Run the following cell to delete the tables and files associated with this lesson.
 

@@ -1,6 +1,6 @@
 -- Databricks notebook source
 -- MAGIC %md-sandbox
--- MAGIC 
+-- MAGIC
 -- MAGIC <div style="text-align: center; line-height: 0; padding-top: 9px;">
 -- MAGIC   <img src="https://databricks.com/wp-content/uploads/2018/03/db-academy-rgb-1200px.png" alt="Databricks Learning" style="width: 600px">
 -- MAGIC </div>
@@ -8,18 +8,18 @@
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="731b610a-2018-40a2-8eae-f6f01ae7a788"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC # Schemas and Tables on Databricks
 -- MAGIC In this demonstration, you will create and explore schemas and tables.
--- MAGIC 
+-- MAGIC
 -- MAGIC ## Learning Objectives
 -- MAGIC By the end of this lesson, you should be able to:
 -- MAGIC * Use Spark SQL DDL to define schemas and tables
 -- MAGIC * Describe how the **`LOCATION`** keyword impacts the default storage directory
--- MAGIC 
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
+-- MAGIC
 -- MAGIC **Resources**
 -- MAGIC * <a href="https://docs.databricks.com/user-guide/tables.html" target="_blank">Schemas and Tables - Databricks Docs</a>
 -- MAGIC * <a href="https://docs.databricks.com/user-guide/tables.html#managed-and-unmanaged-tables" target="_blank">Managed and Unmanaged Tables</a>
@@ -30,8 +30,8 @@
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="10b2fb72-8534-4903-98a1-26716350dd20"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Lesson Setup
 -- MAGIC The following script clears out previous runs of this demo and configures some Hive variables that will be used in our SQL queries.
 
@@ -42,12 +42,12 @@
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="1cbf441b-a62f-4202-af2a-677d37a598b2"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Using Hive Variables
--- MAGIC 
+-- MAGIC
 -- MAGIC While not a pattern that is generally recommended in Spark SQL, this notebook will use some Hive variables to substitute in string values derived from the account email of the current user.
--- MAGIC 
+-- MAGIC
 -- MAGIC The following cell demonstrates this pattern.
 
 -- COMMAND ----------
@@ -58,14 +58,19 @@ SELECT "${da.schema_name}" AS schema_name,
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="014c9f3d-ffd0-48b8-989e-b80b2568d642"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Because you may be working in a shared workspace, this course uses variables derived from your username so the schemas don't conflict with other users. Again, consider this use of Hive variables a hack for our lesson environment rather than a good practice for development.
 
 -- COMMAND ----------
 
+drop schema IF EXISTS ${da.schema_name}_default_location;
+drop schema IF EXISTS ${da.schema_name}_custom_location;
+
+-- COMMAND ----------
+
 -- MAGIC %md <i18n value="ff022f79-7f38-47ea-809e-537cf00526d0"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC ## Schemas
 -- MAGIC Let's start by creating two schemas:
@@ -75,12 +80,14 @@ SELECT "${da.schema_name}" AS schema_name,
 -- COMMAND ----------
 
 CREATE SCHEMA IF NOT EXISTS ${da.schema_name}_default_location;
-CREATE SCHEMA IF NOT EXISTS ${da.schema_name}_custom_location LOCATION '${da.paths.working_dir}/_custom_location.db';
+
+CREATE SCHEMA IF NOT EXISTS ${da.schema_name}_custom_location 
+MANAGED LOCATION 's3a://${da.paths.working_dir}/_custom_location.db';
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="4eff4961-9de3-4d5d-836e-cc48862ef4e6"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC Note that the location of the first schema is in the default location under **`dbfs:/user/hive/warehouse/`** and that the schema directory is the name of the schema with the **`.db`** extension
 
@@ -91,8 +98,8 @@ DESCRIBE SCHEMA EXTENDED ${da.schema_name}_default_location;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="58292139-abd2-453b-b327-9ec2ab76dd0a"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Note that the location of the second schema is in the directory specified after the **`LOCATION`** keyword.
 
 -- COMMAND ----------
@@ -102,10 +109,10 @@ DESCRIBE SCHEMA EXTENDED ${da.schema_name}_custom_location;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="d794ab19-e4e8-4f5c-b784-385ac7c27bc2"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC We will create a table in the schema with default location and insert data. 
--- MAGIC 
+-- MAGIC
 -- MAGIC Note that the schema must be provided because there is no data from which to infer the schema.
 
 -- COMMAND ----------
@@ -120,7 +127,7 @@ SELECT * FROM managed_table_in_db_with_default_location;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="17403d69-25b1-44d5-b37f-bab7c091a01b"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC We can look at the extended table description to find the location (you'll need to scroll down in the results).
 
@@ -131,10 +138,10 @@ DESCRIBE DETAIL managed_table_in_db_with_default_location;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="71f3a626-a3d4-48a6-8489-6c9cffd021fc"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC By default, managed tables in a schema without the location specified will be created in the **`dbfs:/user/hive/warehouse/<schema_name>.db/`** directory.
--- MAGIC 
+-- MAGIC
 -- MAGIC We can see that, as expected, the data and metadata for our Delta Table are stored in that location.
 
 -- COMMAND ----------
@@ -143,17 +150,17 @@ DESCRIBE DETAIL managed_table_in_db_with_default_location;
 -- MAGIC hive_root =   f"dbfs:/user/hive/warehouse"
 -- MAGIC schema_name = f"{DA.schema_name}_default_location.db"
 -- MAGIC table_name =  f"managed_table_in_db_with_default_location"
--- MAGIC 
+-- MAGIC
 -- MAGIC tbl_location = f"{hive_root}/{schema_name}/{table_name}"
 -- MAGIC print(tbl_location)
--- MAGIC 
+-- MAGIC
 -- MAGIC files = dbutils.fs.ls(tbl_location)
 -- MAGIC display(files)
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="ff92a2d3-9bf0-45d0-b78a-c25638ab9479"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC Drop the table.
 
@@ -164,14 +171,14 @@ DROP TABLE managed_table_in_db_with_default_location;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="e9c2d161-c157-4d67-8b8d-dbd3d89b6460"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC Note the table's directory and its log and data files are deleted. Only the schema directory remains.
 
 -- COMMAND ----------
 
 -- MAGIC %python 
--- MAGIC 
+-- MAGIC
 -- MAGIC db_location = f"{hive_root}/{schema_name}"
 -- MAGIC print(db_location)
 -- MAGIC dbutils.fs.ls(db_location)
@@ -179,10 +186,10 @@ DROP TABLE managed_table_in_db_with_default_location;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="bd185ea7-cd88-4453-a77a-1babe4633451"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC We now create a table in the schema with custom location and insert data. 
--- MAGIC 
+-- MAGIC
 -- MAGIC Note that the schema must be provided because there is no data from which to infer the schema.
 
 -- COMMAND ----------
@@ -196,7 +203,7 @@ SELECT * FROM managed_table_in_db_with_custom_location;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="68e86e08-9400-428d-9c56-d47439af7dff"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC Again, we'll look at the description to find the table location.
 
@@ -207,25 +214,25 @@ DESCRIBE DETAIL managed_table_in_db_with_custom_location;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="878787b3-1178-44d1-a775-0bcd6c483184"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC As expected, this managed table is created in the path specified with the **`LOCATION`** keyword during schema creation. As such, the data and metadata for the table are persisted in a directory here.
 
 -- COMMAND ----------
 
 -- MAGIC %python 
--- MAGIC 
+-- MAGIC
 -- MAGIC table_name = f"managed_table_in_db_with_custom_location"
 -- MAGIC tbl_location =   f"{DA.paths.working_dir}/_custom_location.db/{table_name}"
 -- MAGIC print(tbl_location)
--- MAGIC 
+-- MAGIC
 -- MAGIC files = dbutils.fs.ls(tbl_location)
 -- MAGIC display(files)
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="699d9cda-0276-4d93-bf8c-5e1d370ce113"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC Let's drop the table.
 
@@ -236,7 +243,7 @@ DROP TABLE managed_table_in_db_with_custom_location;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="c87c1801-0101-4378-9f52-9a8d052a38e1"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC Note the table's folder and the log file and data file are deleted.  
 -- MAGIC   
@@ -245,20 +252,20 @@ DROP TABLE managed_table_in_db_with_custom_location;
 -- COMMAND ----------
 
 -- MAGIC %python 
--- MAGIC 
+-- MAGIC
 -- MAGIC db_location =   f"{DA.paths.working_dir}/_custom_location.db"
 -- MAGIC print(db_location)
--- MAGIC 
+-- MAGIC
 -- MAGIC dbutils.fs.ls(db_location)
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="67fd15cf-0ca9-4e76-8806-f24c60d324b1"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC ## Tables
 -- MAGIC We will create an external (unmanaged) table from sample data. 
--- MAGIC 
+-- MAGIC
 -- MAGIC The data we are going to use are in CSV format. We want to create a Delta table with a **`LOCATION`** provided in the directory of our choice.
 
 -- COMMAND ----------
@@ -278,7 +285,7 @@ SELECT * FROM external_table;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="367720a7-b738-4782-8f42-571b522c95c2"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC Let's note the location of the table's data in this lesson's working directory.
 
@@ -289,7 +296,7 @@ DESCRIBE TABLE EXTENDED external_table;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="3267ab86-f8fe-40dc-aa52-44aecf8d8fc1"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC Now, we drop the table.
 
@@ -300,7 +307,7 @@ DROP TABLE external_table;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="b9b3c493-3a09-4fdb-9615-1e8c56824b12"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC The table definition no longer exists in the metastore, but the underlying data remain intact.
 
@@ -314,7 +321,7 @@ DROP TABLE external_table;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="c456ac65-ab0b-435a-ae00-acbde5048a96"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC ## Clean up
 -- MAGIC Drop both schemas.
@@ -327,7 +334,7 @@ DROP SCHEMA ${da.schema_name}_custom_location CASCADE;
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="6fa204d5-12ff-4ede-9fe1-871a346052c4"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC Run the following cell to delete the tables and files associated with this lesson.
 

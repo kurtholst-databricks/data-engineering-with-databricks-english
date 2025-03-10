@@ -19,3 +19,11 @@ my_name = None
 
 example_df = spark.range(16)
 
+
+# COMMAND ----------
+
+example_df.show()
+
+# COMMAND ----------
+
+

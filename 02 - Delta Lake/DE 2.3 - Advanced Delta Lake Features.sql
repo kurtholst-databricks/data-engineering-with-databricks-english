@@ -1,6 +1,6 @@
 -- Databricks notebook source
 -- MAGIC %md-sandbox
--- MAGIC 
+-- MAGIC
 -- MAGIC <div style="text-align: center; line-height: 0; padding-top: 9px;">
 -- MAGIC   <img src="https://databricks.com/wp-content/uploads/2018/03/db-academy-rgb-1200px.png" alt="Databricks Learning" style="width: 600px">
 -- MAGIC </div>
@@ -8,14 +8,14 @@
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="d2b35611-0c56-4262-b664-3a89a1d62662"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC # Advanced Delta Lake Features
--- MAGIC 
+-- MAGIC
 -- MAGIC Now that you feel comfortable performing basic data tasks with Delta Lake, we can discuss a few features unique to Delta Lake.
--- MAGIC 
+-- MAGIC
 -- MAGIC Note that while some of the keywords used here aren't part of standard ANSI SQL, all Delta Lake operations can be run on Databricks using SQL
--- MAGIC 
+-- MAGIC
 -- MAGIC ## Learning Objectives
 -- MAGIC By the end of this lesson, you should be able to:
 -- MAGIC * Use **`OPTIMIZE`** to compact small files
@@ -24,7 +24,7 @@
 -- MAGIC * Review a history of table transactions
 -- MAGIC * Query and roll back to previous table version
 -- MAGIC * Clean up stale data files with **`VACUUM`**
--- MAGIC 
+-- MAGIC
 -- MAGIC **Resources**
 -- MAGIC * <a href="https://docs.databricks.com/spark/latest/spark-sql/language-manual/delta-optimize.html" target="_blank">Delta Optimize - Databricks Docs</a>
 -- MAGIC * <a href="https://docs.databricks.com/spark/latest/spark-sql/language-manual/delta-vacuum.html" target="_blank">Delta Vacuum - Databricks Docs</a>
@@ -32,8 +32,8 @@
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="75224cfc-51b5-4c3d-8eb3-4db08469c99f"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Run Setup
 -- MAGIC The first thing we're going to do is run a setup script. It will define a username, userhome, and database that is scoped to each user.
 
@@ -44,12 +44,12 @@
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="7e85feea-be41-41f7-9cd7-df2c140d6286"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Creating a Delta Table with History
--- MAGIC 
+-- MAGIC
 -- MAGIC The cell below condenses all the transactions from the previous lesson into a single cell. (Except for the **`DROP TABLE`**!)
--- MAGIC 
+-- MAGIC
 -- MAGIC As you're waiting for this query to run, see if you can identify the total number of transactions being executed.
 
 -- COMMAND ----------
@@ -92,13 +92,17 @@ WHEN NOT MATCHED AND u.type = "insert"
 
 -- COMMAND ----------
 
+select * from students
+
+-- COMMAND ----------
+
 -- MAGIC %md <i18n value="5f6b0330-42f2-4307-9ff2-0b534947b286"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Examine Table Details
--- MAGIC 
+-- MAGIC
 -- MAGIC Databricks uses a Hive metastore by default to register databases, tables, and views.
--- MAGIC 
+-- MAGIC
 -- MAGIC Using **`DESCRIBE EXTENDED`** allows us to see important metadata about our table.
 
 -- COMMAND ----------
@@ -108,8 +112,8 @@ DESCRIBE EXTENDED students
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="5495f382-2841-4cf5-b872-db4dd3828ee5"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC **`DESCRIBE DETAIL`** is another command that allows us to explore table metadata.
 
 -- COMMAND ----------
@@ -119,21 +123,21 @@ DESCRIBE DETAIL students
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="4ab0fa4f-72cb-4f3b-8ea3-228b13be1baf"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Note the **`Location`** field.
--- MAGIC 
+-- MAGIC
 -- MAGIC While we've so far been thinking about our table as just a relational entity within a database, a Delta Lake table is actually backed by a collection of files stored in cloud object storage.
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="10e37764-bbfd-4669-a967-addd58041d47"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Explore Delta Lake Files
--- MAGIC 
+-- MAGIC
 -- MAGIC We can see the files backing our Delta Lake table by using a Databricks Utilities function.
--- MAGIC 
+-- MAGIC
 -- MAGIC **NOTE**: It's not important right now to know everything about these files to work with Delta Lake, but it will help you gain a greater appreciation for how the technology is implemented.
 
 -- COMMAND ----------
@@ -144,14 +148,14 @@ DESCRIBE DETAIL students
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="075483eb-7ddd-46ef-bbb1-33ee7005923b"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Note that our directory contains a number of Parquet data files and a directory named **`_delta_log`**.
--- MAGIC 
+-- MAGIC
 -- MAGIC Records in Delta Lake tables are stored as data in Parquet files.
--- MAGIC 
+-- MAGIC
 -- MAGIC Transactions to Delta Lake tables are recorded in the **`_delta_log`**.
--- MAGIC 
+-- MAGIC
 -- MAGIC We can peek inside the **`_delta_log`** to see more.
 
 -- COMMAND ----------
@@ -162,19 +166,19 @@ DESCRIBE DETAIL students
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="1bcbb8d1-f871-451a-ad16-762dfa91c0a3"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Each transaction results in a new JSON file being written to the Delta Lake transaction log. Here, we can see that there are 8 total transactions against this table (Delta Lake is 0 indexed).
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="c2fbd6d7-ea8e-4000-9702-e21408f3ef78"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Reasoning about Data Files
--- MAGIC 
+-- MAGIC
 -- MAGIC We just saw a lot of data files for what is obviously a very small table.
--- MAGIC 
+-- MAGIC
 -- MAGIC **`DESCRIBE DETAIL`** allows us to see some other details about our Delta table, including the number of files.
 
 -- COMMAND ----------
@@ -184,12 +188,12 @@ DESCRIBE DETAIL students
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="adf1dc55-37a4-4376-86df-78895bfcf6b8"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Here we see that our table currently contains 4 data files in its present version. So what are all those other Parquet files doing in our table directory? 
--- MAGIC 
+-- MAGIC
 -- MAGIC Rather than overwriting or immediately deleting files containing changed data, Delta Lake uses the transaction log to indicate whether or not files are valid in a current version of the table.
--- MAGIC 
+-- MAGIC
 -- MAGIC Here, we'll look at the transaction log corresponding the **`MERGE`** statement above, where records were inserted, updated, and deleted.
 
 -- COMMAND ----------
@@ -200,25 +204,25 @@ DESCRIBE DETAIL students
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="85e8bce8-c168-4ac6-9835-f694cab5b43c"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC The **`add`** column contains a list of all the new files written to our table; the **`remove`** column indicates those files that no longer should be included in our table.
--- MAGIC 
+-- MAGIC
 -- MAGIC When we query a Delta Lake table, the query engine uses the transaction logs to resolve all the files that are valid in the current version, and ignores all other data files.
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="c69bbf45-e75e-419f-a149-fd18f76daab6"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Compacting Small Files and Indexing
--- MAGIC 
+-- MAGIC
 -- MAGIC Small files can occur for a variety of reasons; in our case, we performed a number of operations where only one or several records were inserted.
--- MAGIC 
+-- MAGIC
 -- MAGIC Files will be combined toward an optimal size (scaled based on the size of the table) by using the **`OPTIMIZE`** command.
--- MAGIC 
+-- MAGIC
 -- MAGIC **`OPTIMIZE`** will replace existing data files by combining records and rewriting the results.
--- MAGIC 
+-- MAGIC
 -- MAGIC When executing **`OPTIMIZE`**, users can optionally specify one or several fields for **`ZORDER`** indexing. While the specific math of Z-order is unimportant, it speeds up data retrieval when filtering on provided fields by colocating data with similar values within data files.
 
 -- COMMAND ----------
@@ -229,17 +233,17 @@ ZORDER BY id
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="15475907-e307-491c-9bab-4d8afc363ec5"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Given how small our data is, **`ZORDER`** does not provide any benefit, but we can see all of the metrics that result from this operation.
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="5684dfb4-0b33-49f1-a4f8-cb2f8d88bf09"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Reviewing Delta Lake Transactions
--- MAGIC 
+-- MAGIC
 -- MAGIC Because all changes to the Delta Lake table are stored in the transaction log, we can easily review the <a href="https://docs.databricks.com/spark/2.x/spark-sql/language-manual/describe-history.html" target="_blank">table history</a>.
 
 -- COMMAND ----------
@@ -249,14 +253,14 @@ DESCRIBE HISTORY students
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="56de8919-b5d0-4d1f-81d8-ccf22fdf6da0"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC As expected, **`OPTIMIZE`** created another version of our table, meaning that version 8 is our most current version.
--- MAGIC 
+-- MAGIC
 -- MAGIC Remember all of those extra data files that had been marked as removed in our transaction log? These provide us with the ability to query previous versions of our table.
--- MAGIC 
+-- MAGIC
 -- MAGIC These time travel queries can be performed by specifying either the integer version or a timestamp.
--- MAGIC 
+-- MAGIC
 -- MAGIC **NOTE**: In most cases, you'll use a timestamp to recreate data at a time of interest. For our demo we'll use version, as this is deterministic (whereas you may be running this demo at any time in the future).
 
 -- COMMAND ----------
@@ -267,17 +271,17 @@ FROM students VERSION AS OF 3
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="0499f01b-7700-4381-80cc-9b4fb093017a"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC What's important to note about time travel is that we're not recreating a previous state of the table by undoing transactions against our current version; rather, we're just querying all those data files that were indicated as valid as of the specified version.
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="f569a57f-24cc-403a-88ab-709b4f1a7548"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Rollback Versions
--- MAGIC 
+-- MAGIC
 -- MAGIC Suppose you're typing up query to manually delete some records from a table and you accidentally execute this query in the following state.
 
 -- COMMAND ----------
@@ -287,10 +291,10 @@ DELETE FROM students
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="b7d46e40-1c41-4e8a-8f25-25325da065cb"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Note that when we see a **`-1`** for number of rows affected by a delete, this means an entire directory of data has been removed.
--- MAGIC 
+-- MAGIC
 -- MAGIC Let's confirm this below.
 
 -- COMMAND ----------
@@ -300,8 +304,8 @@ SELECT * FROM students
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="0477fb25-7248-4552-98a1-ffee4cd7b5b0"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Deleting all the records in your table is probably not a desired outcome. Luckily, we can simply rollback this commit.
 
 -- COMMAND ----------
@@ -311,36 +315,37 @@ RESTORE TABLE students TO VERSION AS OF 8
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="4fbc3b91-8b73-4644-95cb-f9ca2f1ac6a3"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Note that a **`RESTORE`** <a href="https://docs.databricks.com/spark/latest/spark-sql/language-manual/delta-restore.html" target="_blank">command</a> is recorded as a transaction; you won't be able to completely hide the fact that you accidentally deleted all the records in the table, but you will be able to undo the operation and bring your table back to a desired state.
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="789ca5cf-5eb1-4a81-a595-624994a512f1"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC ## Cleaning Up Stale Files
--- MAGIC 
+-- MAGIC
 -- MAGIC Databricks will automatically clean up stale files in Delta Lake tables.
--- MAGIC 
+-- MAGIC
 -- MAGIC While Delta Lake versioning and time travel are great for querying recent versions and rolling back queries, keeping the data files for all versions of large production tables around indefinitely is very expensive (and can lead to compliance issues if PII is present).
--- MAGIC 
+-- MAGIC
 -- MAGIC If you wish to manually purge old data files, this can be performed with the **`VACUUM`** operation.
--- MAGIC 
+-- MAGIC
 -- MAGIC Uncomment the following cell and execute it with a retention of **`0 HOURS`** to keep only the current version:
 
 -- COMMAND ----------
 
--- VACUUM students RETAIN 0 HOURS
+SET spark.databricks.delta.retentionDurationCheck.enabled = false;
+VACUUM students RETAIN 0 HOURS;
 
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="6a3b0b37-1387-4b41-86bf-3f181ddc1562"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC By default, **`VACUUM`** will prevent you from deleting files less than 7 days old, just to ensure that no long-running operations are still referencing any of the files to be deleted. If you run **`VACUUM`** on a Delta table, you lose the ability time travel back to a version older than the specified data retention period.  In our demos, you may see Databricks executing code that specifies a retention of **`0 HOURS`**. This is simply to demonstrate the feature and is not typically done in production.  
--- MAGIC 
+-- MAGIC
 -- MAGIC In the following cell, we:
 -- MAGIC 1. Turn off a check to prevent premature deletion of data files
 -- MAGIC 1. Make sure that logging of **`VACUUM`** commands is enabled
@@ -349,15 +354,22 @@ RESTORE TABLE students TO VERSION AS OF 8
 -- COMMAND ----------
 
 SET spark.databricks.delta.retentionDurationCheck.enabled = false;
+-- This setting disables the retention duration check, allowing VACUUM to run with a retention period of less than 7 days.
+
 SET spark.databricks.delta.vacuum.logging.enabled = true;
+-- This setting enables logging for the VACUUM operation, allowing you to track its progress and results.
 
 VACUUM students RETAIN 0 HOURS DRY RUN
 
 -- COMMAND ----------
 
+DESCRIBE HISTORY students
+
+-- COMMAND ----------
+
 -- MAGIC %md <i18n value="be50e096-ba08-43be-8056-d56ad5ae7914"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC By running **`VACUUM`** and deleting the 10 files above, we will permanently remove access to versions of the table that require these files to materialize.
 
 -- COMMAND ----------
@@ -367,8 +379,8 @@ VACUUM students RETAIN 0 HOURS
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="a847e55a-0ecf-4b10-85ab-5aa8566ff4e1"/>
--- MAGIC 
--- MAGIC 
+-- MAGIC
+-- MAGIC
 -- MAGIC Check the table directory to show that files have been successfully deleted.
 
 -- COMMAND ----------
@@ -379,7 +391,7 @@ VACUUM students RETAIN 0 HOURS
 -- COMMAND ----------
 
 -- MAGIC %md <i18n value="b854a50f-635b-4cdc-8f18-38c5ab595648"/>
--- MAGIC 
+-- MAGIC
 -- MAGIC  
 -- MAGIC Run the following cell to delete the tables and files associated with this lesson.
 
